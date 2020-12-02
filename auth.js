@@ -3,11 +3,25 @@ var fs = require('fs')
 const { writeAccessLog, writeFaviconLog, writeChatClientLog} = require('./WriteAccessLog')
 const { Authenticate } = require('./Authenticate')
 
+function buildUrlDataObject (requestUrl) {
+    var urlData = requestUrl.replace('\/\?', ''),
+        urlDataParts = urlData.split('\&'),
+        urlDataObject = {}
+    
+    for (var i = 0; i < urlDataParts.length; i++) {
+        var keyValuePairs = urlDataParts[i].split('\=')
+        urlDataObject[keyValuePairs[0]] = keyValuePairs[1]
+    }
+
+    return urlDataObject
+}
+
 var authServer = http.createServer((request, response) => {
-    var accessDate = new Date()
-    var remoteAddress = request.connection.remoteAddress
-    request.headers['RemoteAddress'] = remoteAddress
-    request.headers['Date'] = accessDate
+    var accessDate = new Date(),
+        remoteAddress = request.connection.remoteAddress
+
+        request.headers['RemoteAddress'] = remoteAddress
+        request.headers['Date'] = accessDate
     
 
     if (request.url === '/favicon.ico') {
@@ -25,21 +39,12 @@ var authServer = http.createServer((request, response) => {
         'Access-Control-Allow-Origin': '*'
     });
 
-    var urlData = request.url.replace('\/\?', '');
-    var urlDataParts = urlData.split('\&');
-    var urlDataObject = {}
-    
-    for (var i = 0; i < urlDataParts.length; i++) {
-        var keyValuePairs = urlDataParts[i].split('\=')
-        urlDataObject[keyValuePairs[0]] = keyValuePairs[1]
-    }
-
-    var authentication = Authenticate(urlDataObject)
+    var urlDataObject = buildUrlDataObject(request.url),
+        authentication = Authenticate(urlDataObject)
 
     writeChatClientLog('\n'+accessDate+','+remoteAddress+',AUTHENTICATION,Authenticated:'+authentication.authenticated)
 
     response.write(JSON.stringify(authentication))
-
     response.end()
 })
 
