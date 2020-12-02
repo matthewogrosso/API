@@ -1,0 +1,20 @@
+{
+    "sessionPath": "session/session127001",
+    "ipAddress": "127.0.0.1",
+    "access": [
+        "2020-11-17T09:11:04.861Z",
+        "2020-11-17T09:16:03.181Z"
+    ],
+    "command": [
+        "ls",
+        "echo"
+    ],
+    "arguments": [
+        "bin",
+        "privateFirefox"
+    ],
+    "userAgent": [
+        "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:82.0) Gecko/20100101 Firefox/82.0",
+        "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:82.0) Gecko/20100101 Firefox/82.0"
+    ]
+}

@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>
+            Scaled Text Entry Terminal Promt
+        </title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+            * { box-sizing: border-box; }
+
+            #stEntryField:focus, stEntryField:active {
+                outline: none;
+                border: none;
+            }
+
+            #stEntryField { 
+                height: 50%;
+                font-size: 50vh;
+                text-align: center;
+                border: none; 
+                transition: all .5s ease-out; 
+                position: absolute; 
+                top: 75%; 
+                left: 50%; 
+                transform: translateX(-50%) translateY(-50%);
+                padding: 20px 0;
+                width: 100vw;
+                text-shadow: 1px 1px 1px rgba(100,100,100,0.1);
+            }
+
+            #stOutputField {
+                position: absolute;
+                left: 0;
+                top: 0;
+                height: 50vh;
+                width: 100vw;
+                padding: 0.5em;
+                font-size: 1.1em;
+                background: linear-gradient(70deg, #49296f,white);
+                background-size: cover;
+                color: white;
+                border: 1px solid #25264a;
+                text-shadow: 1px 1px 1px black;
+                font-family: monospace;
+                line-height: 1.5em;
+                letter-spacing: 0.5px;
+            }
+        </style>
+    </head>
+    <body>
+        <input id="stEntryField" type="text" />
+        <textarea id="stOutputField"></textarea>
+
+        <script>
+            var currentDirectory = '/'
+
+            window.onload = function () {
+                var stEntryField = document.getElementById('stEntryField')
+                stEntryField.focus()
+            }
+            
+
+            function changeDirectory (directory) {
+                if (directory == '..') {
+                    var currentDirectoryTreeArray = currentDirectory.split('/')
+
+                    currentDirectory = currentDirectory.replace('/' + currentDirectoryTreeArray[currentDirectoryTreeArray.length], '')
+                    console.log('current directory is ' + currentDirectory)
+                }
+                else {
+                    currentDirectory = currentDirectory + directory + '/'
+                    console.log('current directory is ' + currentDirectory)
+                }
+                
+            }
+            
+            function processInputLine (commandString) {
+                var commandObject = commandString.split(' ')
+                var command = commandObject[0]
+                var stringArguments = commandString.replace(command + ' ', '')
+
+                httpRequest = new XMLHttpRequest()
+                httpRequest.onreadystatechange = terminalInputAPI
+                var url = ''
+
+                if (document.URL == '67.6.36.49:8084') {
+                    url = '67.6.36.49:8089'
+                } else {
+                    url = document.URL.replace('8084', '8089')
+                }
+
+                reqUrl = url + '?Command=' + command + '&String=' + stringArguments
+                console.log(reqUrl)
+
+                if (command == 'cd') {
+                    changeDirectory(stringArguments.split(' ')[0])
+                }
+
+                httpRequest.open('GET', reqUrl)
+                httpRequest.send()
+            }
+
+            function terminalInputAPI () {
+                if (httpRequest.readyState === XMLHttpRequest.DONE) {
+                    if (httpRequest.status === 200) {
+                        var response = JSON.parse(httpRequest.responseText)
+                        console.log(response)
+                        var stOutputField = document.getElementById('stOutputField')
+
+                        console.log(response.stdout)
+    
+                        if (response.success == false) {
+                            stOutputField.value = 'Could not connect to terminal session.'
+                        }
+                        
+                        if (response.success == true) {
+                            if (response.command == 'cd') {
+                                stOutputField.value = 'changed to ' + currentDirectory + ' directory'
+                            } else {
+                                if (response.stdout == '') {
+                                    if (response.stderr == 'undefined') {
+                                        console.log(response.stderr)
+                                    } else {
+                                        stOutputField.value = response.stderr
+                                    }
+                                } else {
+                                    stOutputField.value = response.stdout
+                                }
+                            }
+                        }
+                    } else {
+                        console.log('There was a problem with the request.')
+                    }
+                }
+            }
+
+            var fontSize = []
+                fontSize[1] = 50
+                fontSize[2] = 45
+                fontSize[3] = 40
+                fontSize[4] = 30
+                fontSize[5] = 26
+                fontSize[6] = 23
+                fontSize[7] = 19
+                fontSize[8] = 17
+                fontSize[9] = 15
+                fontSize[10] = 13
+                fontSize[11] = 12
+                fontSize[12] = 11
+                fontSize[13] = 10
+                fontSize[14] = 9.5
+                fontSize[15] = 9
+                fontSize[16] = 8.5
+                fontSize[17] = 8
+                fontSize[18] = 7.5
+                fontSize[19] = 7
+                fontSize[20] = 6.5
+                fontSize[21] = 6
+
+            // send to terminal line api
+
+            var stEntryField = document.getElementById('stEntryField')
+            var stOutputField = document.getElementById('stOutputField')
+
+                stEntryField.onkeyup = function (e) {
+                    var numberOfCharactersEntered = this.value.length
+                    this.style.fontSize = fontSize[numberOfCharactersEntered] + 'vw'
+
+                    if (e.key == 'Enter') {
+                        var line = this.value
+                        stOutputField.value = processInputLine(line)
+                        stEntryField.value = ''
+                        stEntryField.focus()
+                    }
+                }
+        </script>
+    </body>
+</html>

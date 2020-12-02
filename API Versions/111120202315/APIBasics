@@ -1,0 +1,9 @@
+Two node.js server instances:
+    + local on port 8080 for API (api.js)
+    + local on port 8081 for browser interface (accountUI.js)
+
+The browser interface calls API on port 8080 through XHTMLRequest with information entered in form on port 8081.
+
+API calls to charge or pay toward an account balance for a particular provider trigger those transactions being written to a Ledger object as well as a Ledger file on the server for persistent storage of transactions across node reboots.
+
+During node.js server operation of api.js running on port 8080 Account and Ledger objects are created from scratch or from the local files storing account information and ledger transactions.

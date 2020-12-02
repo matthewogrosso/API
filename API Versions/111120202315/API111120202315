@@ -1,0 +1,47 @@
+API Version 11112020. November 11th, 2020.
+
+
+Storage and Retrieval of Data:
+    + node.js file system (fs) module reads and writes JSON files
+        + Stores Account object as JSON after charge or pay
+        + Looks for and reads Account JSON file if it exists or creates base account 'IS'
+            + 'IS' is initialized with a credit limit of 10
+            + A charge of 1 and a payment of 1 are performed and added to Ledger
+        + Stores Ledger object as JSON file and retrieves it, or initializes a base ledger with an entry of 0 from 'System' to 'System' 
+
+
+Supported Views:
+    + Charge or Pay
+        + Charge or Pay (accountUI.js) runs on port 8081
+        + URL: http://localhost:8081
+    + Credit View
+        + Credit View (creditUI.js) runs on port 8082
+        + URL: http://localhost:8082
+
+
+Startup Terminal or Command Promt Instructions:
+    Terminal/Prompt 1: 'node api.js'       # Should log running on port 8080
+    Terminal/Prompt 2: 'node accountUI.js' # Should log running on port 8081
+    Terminal/Prompt 3: 'node creditUI.js'  # Should log running on port 8082
+
+    Once node is running http on port 8080 accountUI (port 8081) and creditUI (port 8082) can send and retrieve JSON responses from the API.
+
+    In a web browser access the Charge or Pay view at http://localhost:8081 and the Credit View at http://localhost:8082
+
+
+Supported API HTTP Call Actions:
+    + Charge
+        + Charge an account's credit line balance
+            + http://localhost:8080/?Account=<accountId>&Action=charge&Provider=<provider>&Amount=<amount>
+    + Pay
+        + Pay an account's credit line balance
+            + http://localhost:8080/?Account=<accountId>&Action=pay&Provider=<provider>&Amount=<amount>
+    + Get Balance
+        + Get the balance of an account's credit line
+            + http://localhost:8080/?Account=<accountId>&Action=getBalance&Provider=<provider>
+    + Get Limit
+        + Get the limit of an account's credit line
+            + http://localhost:8080/?Account=<accountId>&Action=getLimit&Provider=<provider>
+    + Get Providers
+        + Get all of an account's credit lines
+            + http://localhost:8080/?Account=<accountId>&Action=getProviders

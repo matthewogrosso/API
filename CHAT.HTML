@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Chat with Others</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    </head>
+    <body>
+        <div id="generalChatRoom">
+            <div id="messages"></div>
+            <div id="users">
+                <h5 class="chatroom-listing-heading">Users</h5>
+            </div>
+            <div id="rooms">
+                <h5 class="chatroom-listing-heading">Chatrooms</h5>
+            </div>
+        </div>
+
+        <chat>
+            <chatwindow>
+                <failmessage class="hidden"></failmessage>
+                <loggedin class="hidden">
+                    <loggedinas>
+                        Guest
+                    </loggedinas>
+                    <loggedinoptions>
+                        <button id="logout" loggedinuser="Guest">Logout</button>
+                    </loggedinoptions>
+                </loggedin>
+                <chatoutput>
+                    <button id="newUserBtn" class="">New User</button>
+                    <button id="userLoginBtn" class="">Registered User</button>
+                    <div id="newUserEntryForm" class="hidden">
+                        <input id="newUserName" placeholder="New Username" />
+                        <input id="newPassword" placeholder="New Password" />
+                        <button id="createUserBtn">Confirm</button>
+                    </div>
+                    <div id="userLoginForm" class="hidden">
+                        <input id="userName" placeholder="Your Username" />
+                        <input id="password" placeholder="Your Password" />
+                        <button id="loginBtn">Login</button>
+                    </div>
+                </chatoutput>
+                <activechatters></activechatters>
+            </chatwindow>
+            <input type="text" id="chatinput" />
+        </chat>
+        
+        <style>
+            #generalChatRoom {
+                position: absolute;
+                width: 98vw;
+                height: 49vh;
+                background: rgb(0,0,0,0.5);
+                left: 1vw;
+                top: 0;
+            }
+            #messages {
+                position: absolute;
+                height: 100%;
+                width: 80%;
+                top: 0;
+                left: 0;
+                color: white;
+                overflow-y: scroll;
+                padding-bottom: 10px;
+            }
+            .log-entry {
+                border-bottom: 1px solid rgba(255,255,255,0.1);
+                padding: 2px 5px;
+                font-size: 0.9em;
+            }
+            #users {
+                position: absolute;
+                height: 60%;
+                width: 20%;
+                bottom: 0;
+                right: 0;
+                background: rgba(0,0,0,0.2);
+            }
+            #rooms {
+                position: absolute;
+                height: 40%;
+                width: 20%;
+                top: 0;
+                right: 0;
+                background: rgba(0,0,0,0.2);
+                border-bottom: 1px solid #ffffff45;
+            }
+            .chatroom-listing-heading {
+                color: white;
+                font-weight: bold;
+                padding: 5px;
+                margin: 0;
+                border-bottom: 1px solid #ffffffb3;
+                letter-spacing: 1px;
+            }
+            .chatroom-listing {
+                color: white;
+                padding: 5px;
+                border-bottom: 1px solid #ccc;
+                cursor: pointer;
+            }
+            body {
+                background-position: center;
+                background-attachment: fixed;
+            }
+            loggedin {
+                border-bottom: 1px solid black;
+                padding: 5px;
+                display: block;
+            }
+            .entry-date-time {
+                font-size: 0.85em;
+                border: 1px solid #ffffff54;
+                padding: 2px 6px;
+                border-radius: 3px;
+                margin: 1px 0;
+                display: inline-block;
+            }
+            #newUserEntryForm,
+            #userLoginForm {
+                position: absolute;
+                top: 100px;
+                left: 50%;
+                transform: translateX(-50%) translateY(-50%);
+            }
+            * {
+                box-sizing: border-box;
+            }
+            input {
+                transition: all 0.5s ease;
+                margin-top: 10px;
+            }
+            .hidden {
+                display: none;
+            }
+            #generalChatRoom.is-active {
+                height: calc(100vh - 200px);
+                width: 100vw;
+                left: 0;
+                top: 0;
+            }
+            chat {
+                position: absolute;
+                width: 50vw;
+                height: 50vh;
+                background: #cccccc;
+                padding: 20px;
+                box-sizing: border-box;
+                bottom: 0;
+                right: 50px;
+                border-radius: 3px;
+                border: 1px solid #717171;
+                box-shadow: 0px 0px 50px 0px #00143338;
+            }
+            chat.active-chat {
+                height: 125px;
+                width: 100vw;
+                left: 0;
+                bottom: 0;
+            }
+            chat button {
+                margin: 10px;
+            }
+            chatwindow {
+                width: 100%;
+                height: calc(100% - 40px);
+                display: block;
+            }
+            chatoutput {
+                position: relative;
+                width: 100%;
+                height: 100%;
+                display: block;
+                text-align: center;
+            }
+            #chatinput {
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                width: 100%;
+                border: none;
+                border-top: 1px solid #949494;
+                height: 40px;
+                box-shadow: 0px -1px 2px 0px black;
+                padding: 0 20px;
+            }
+            .user-list-item:hover {
+                background: rgba(255,255,255,0.9);
+                color: black;
+            }
+            .user-list-item {
+                color: white;
+                cursor: pointer;
+                border: 1px solid white;
+                border-radius: 3px;
+                margin: 5px;
+                padding: 5px;
+            }
+            .log-entry.local-user {
+                text-align: right;
+            }
+            .user-name {
+                font-weight: bold;
+            }
+        </style>
+        
+        <script>
+            var currentChatLog = ''
+
+            function updateScroll(){
+                var messages = document.getElementById('messages');
+                messages.scrollTop = messages.scrollHeight;
+            }
+
+            function setUserStatus(User, StatName, Stat) {
+                httpRequest = new XMLHttpRequest()
+                httpRequest.onreadystatechange = sendSetUserStatusRequest
+                var domain = document.domain
+                var url = 'http://' + domain 
+                + ':8080?Action=UpdateStatus&User=' + User 
+                + '&StatName=' + StatName
+                + '&Stat=' + Stat
+                httpRequest.open('GET', url)
+                httpRequest.send()
+            }
+
+            function sendSetUserStatusRequest () {
+                if (httpRequest.readyState === XMLHttpRequest.DONE) {
+                    if (httpRequest.status === 200) {
+                        var response = JSON.parse(httpRequest.responseText)
+                        console.log(response)
+                        return
+                    } else {
+                        var response = httpRequest.responseText
+                        console.log(response)
+                        return
+                    }
+                }
+            }
+
+            function getChatLog (room) {
+                httpRequest = new XMLHttpRequest()
+                httpRequest.onreadystatechange = sendGetChatLogRequest
+                var domain = document.domain
+                var url = 'http://' + domain + ':8096?Action=GetChatLog&room='+room
+                httpRequest.open('GET', url)
+                httpRequest.send()
+            }
+
+            function sendGetChatLogRequest () {
+                if (httpRequest.readyState === XMLHttpRequest.DONE) {
+                    if (httpRequest.status === 200) {
+                        var response = JSON.parse(httpRequest.responseText)
+                        if (response.ChatLog.log != currentChatLog) {
+                            currentChatLog = response.ChatLog.log
+                            var log = response.ChatLog.log.split('\n')
+                            var chatLogHTML = ``
+
+                            for (var i = 0; i < log.length; i++) {
+                                var logEntryParts = log[i].split("\:\:")
+
+                                if (logEntryParts[1] == JSON.parse(localStorage['LoggedIn']).LocalStorageLoggedIn ) {
+                                    chatLogHTML = chatLogHTML + `
+                                        <div class="log-entry local-user">
+                                            <span class="user-name">${logEntryParts[1]}</span>: 
+                                            <span class="user-message">${logEntryParts[2]}</span>
+                                            <span class="entry-date-time">${logEntryParts[0].split('\,')[1]}</span>
+                                        </div>`
+                                } else {
+                                    chatLogHTML = chatLogHTML + `
+                                        <div class="log-entry other-user">
+                                            <span class="entry-date-time">${logEntryParts[0].split('\,')[1]}</span>
+                                            <span class="user-name">${logEntryParts[1]}</span>: 
+                                            <span class="user-message">${logEntryParts[2]}</span>
+                                        </div>`
+                                }
+                            }
+
+                            var messages = document.getElementById('messages')
+                            messages.innerHTML = chatLogHTML
+                            updateScroll()
+                            return
+                        } else {
+                            return
+                        }
+                    } else {
+                        var response = httpRequest.responseText
+                        console.log(response)
+                        return
+                    }
+                }
+            }
+
+            function logMessage (Message, Room, User) {
+                httpRequest = new XMLHttpRequest()
+                httpRequest.onreadystatechange = sendLogMessageRequest
+                var domain = document.domain
+                var url = 'http://' + domain 
+                    + ':8096?Action=LogMessage&Message=' + Message 
+                    + '&Room=' + Room 
+                    + '&User=' + User
+                httpRequest.open('GET', url)
+                httpRequest.send()
+            }
+
+            function sendLogMessageRequest () {
+                if (httpRequest.readyState === XMLHttpRequest.DONE) {
+                    if (httpRequest.status === 200) {
+                        var response = JSON.parse(httpRequest.responseText)
+                        console.log(response)
+                        return
+                    } else {
+                        var response = httpRequest.responseText
+                        console.log(response)
+                        return
+                    }
+                }
+            }
+            
+            function postMessage(message) {
+                var user = JSON.parse(localStorage['LoggedIn']).LocalStorageLoggedIn
+                logMessage(message, 'General', user)
+
+                var messages = document.getElementById('messages')
+
+                var messageElement = document.createElement('div')
+                    messageElement.classList.add('message')
+                    messageElement.classList.add(`${user}-message`)
+                    messageElement.innerText = `${user}: ${message}`
+
+                messages.appendChild(messageElement)
+
+                setUserStatus(user, 'Last-Post-Time', new Date().toUTCString() )
+                setUserStatus(user, 'Is-Active', 'true')
+                setUserStatus(user, 'Current-Chat-Room', 'General')
+
+                updateScroll()
+                return
+            }
+
+            function hideLoginWindow () {
+                var chatoutput = document.getElementsByTagName('chatoutput')[0]
+                    chatoutput.classList.add('hidden')
+                return
+            }
+
+            function logoutUser (User) {
+                httpRequest = new XMLHttpRequest()
+                httpRequest.onreadystatechange = sendLogoutUserRequest
+                var domain = document.domain
+                var url = 'http://' + domain 
+                    + ':8080?Action=Logout&User=' + User
+                httpRequest.open('GET', url)
+                httpRequest.send()
+            }
+
+            function sendLogoutUserRequest () {
+                if (httpRequest.readyState === XMLHttpRequest.DONE) {
+                    if (httpRequest.status === 200) {
+                        var response = JSON.parse(httpRequest.responseText)
+                        console.log(response)
+                        var userListItemEntry = document.getElementById('userListItem' + response.User)
+                            userListItemEntry.remove()
+                            localStorage['isLoggedIn'] = 'false'
+
+                        var chat = document.getElementsByTagName('chat')[0]
+                            chat.classList.remove('active-chat')
+
+                        return
+                    } else {
+                        var response = httpRequest.responseText
+                        console.log(response)
+                        return
+                    }
+                }
+            }
+
+            function activateLogoutButton (user) {
+                var logoutButton = document.getElementById('logout')
+                    logoutButton.setAttribute('loggedinuser', user)
+
+                    logoutButton.onclick = function () {
+                        var chatoutput = document.getElementsByTagName('chatoutput')[0]
+                            chatoutput.classList.remove('hidden')
+
+                        var loggedin = document.getElementsByTagName('loggedin')[0]
+                            loggedin.classList.add('hidden')
+
+                        var logoutUserSuccess = logoutUser(user)
+                    }
+                return
+            }
+
+            function updateFailMessage (message) {
+                var failmessage = document.getElementsByTagName('failmessage')[0]
+                    failmessage.innerHTML = message
+                    failmessage.classList.remove('hidden')
+                return
+            }
+
+            function updateLocalStorage (status) {
+                localStorage['LoggedIn'] = status
+                return true
+            }
+
+            function updateUserNameDisplay () {
+                var loggedin = document.getElementsByTagName('loggedin')[0]
+                    loggedin.classList.remove('hidden')
+
+                var loggedInAs = document.getElementsByTagName('loggedinas')[0]
+                loggedInAs.innerHTML = JSON.parse(localStorage['LoggedIn']).LocalStorageLoggedIn
+                return
+            }
+
+            function addNewUser (username, password) {
+                httpRequest = new XMLHttpRequest()
+                httpRequest.onreadystatechange = sendAddUserRequest
+                var domain = document.domain
+                var url = 'http://' + domain +':8095?Action=AddUser&user='+username+'&pass='+password
+                httpRequest.open('GET', url)
+                httpRequest.send()
+            }
+
+            function sendAddUserRequest () {
+                if (httpRequest.readyState === XMLHttpRequest.DONE) {
+                    if (httpRequest.status === 200) {
+                        var response = httpRequest.responseText
+                        if (response.AddUserSuccess == true) {
+                            var updateLocalStorageSuccess = updateLocalStorage(response)
+                            updateUserNameDisplay()
+                            var userLoginBtn = document.getElementById('userLoginBtn')
+                                userLoginBtn.click()
+                            return
+                        } else if (response.AddUserSuccess == false) {
+                            var updateLocalStorageSuccess = updateLocalStorage(response)
+                            updateUserNameDisplay()
+                            return  
+                        }
+                    } else {
+                        var response = httpRequest.responseText
+                        console.log(response)
+                        return
+                    }
+                }
+            }
+
+            function authenticateUser(credentialsObject) {
+                httpRequest = new XMLHttpRequest()
+                httpRequest.onreadystatechange = sendAuthenicationRequest
+                var domain = document.domain
+                var url = 'http://'+domain+':8092/?user='+credentialsObject.user+'&pass='+credentialsObject.pass
+                httpRequest.open('GET', url)
+                httpRequest.send()
+                return
+            }
+
+            function sendAuthenicationRequest () {
+                if (httpRequest.readyState === XMLHttpRequest.DONE) {
+                    if (httpRequest.status === 200) {
+                        var failmessage = document.getElementsByTagName('failmessage')[0]
+                            failmessage.classList.add('hidden')
+
+                        var loggedin = document.getElementsByTagName('loggedin')[0]
+                            loggedin.classList.remove('hidden')
+
+                        var response = httpRequest.responseText
+                        var updateLocalStorageSuccess = updateLocalStorage(response)
+                        var responseObject = JSON.parse(response)
+
+                        if (responseObject["authenticated"] === false) {
+                            updateFailMessage('Login unsuccessful. User and password did not match.')
+                            loggedin.classList.add('hidden')
+                        }
+                        if (responseObject["authenticated"] === true) {
+                            updateUserNameDisplay()
+                            hideLoginWindow()
+                            activateLogoutButton(responseObject["LocalStorageLoggedIn"])
+                            getChatLog('General')
+                            addChatRoomToOptions('General')
+                            setChatroomLocally ('General')
+                            refreshChatLog()
+                            populateActiveUsersList()
+                            setChatInputToActive()
+                            localStorage['isLoggedIn'] = 'true'
+                        }
+                        return
+                    } else {
+                        var response = httpRequest.responseText
+                        var updateLocalStorageSuccess = updateLocalStorage(response)
+                        return
+                    }
+                }
+            }
+
+            function setChatInputToActive () {
+                var chat = document.getElementsByTagName('chat')[0]
+                    chat.classList.add('active-chat')
+
+                var generalChatRoom = document.getElementById('generalChatRoom')
+                    generalChatRoom.classList.add('is-active')
+            }
+
+            function userListItemClick() {
+                var user = this.innerText
+                console.log('user clicked: ', user)
+            }
+
+            function buildUserListItem(User, UserData) {
+                var userListItem = document.createElement('div')
+                    userListItem.classList.add('user-list-item')
+                    userListItem.innerText = User
+                    userListItem.id = 'userListItem' + User
+                    userListItem.onclick = userListItemClick
+
+                    return userListItem
+            }
+
+            function populateActiveUsersList () {
+                httpRequest = new XMLHttpRequest()
+                httpRequest.onreadystatechange = sendGetAllActiveUsersRequest
+                var domain = document.domain
+                var url = 'http://' + domain + ':8080/?Action=GetAllActiveUsers'
+                httpRequest.open('GET', url)
+                httpRequest.send()
+                return
+            }
+
+            function sendGetAllActiveUsersRequest () {
+                if (httpRequest.readyState === XMLHttpRequest.DONE) {
+                    if (httpRequest.status === 200) {
+                        var responseObject = JSON.parse(httpRequest.responseText)
+                        var AllActiveUsers = responseObject.AllActiveUsers
+                        var usersDisplay = document.getElementById('users')
+
+                        for (let User in AllActiveUsers) {
+                            var userListItem = buildUserListItem(User, AllActiveUsers[User])
+                            usersDisplay.appendChild(userListItem)
+                        }
+
+                        return
+                    } else {
+                        var response = httpRequest.responseText
+                        console.log(response)
+                        return
+                    }
+                }
+            }
+
+            function getChatroomLocally () {
+                if (localStorage['room']) {
+                    return localStorage['room']
+                } else {
+                    return 'No room stored locally'
+                }
+            }
+
+            function setChatroomLocally (room) {
+                localStorage['room'] = room
+            }
+
+            function selectChatroom() {
+                var chatRoomName = this.innerText
+                console.log('chatRoomName: ', chatRoomName)
+            }
+
+            function addChatRoomToOptions(room) {
+                var chatRoomList = document.getElementById('rooms')
+
+                var chatRoomListingElement = document.createElement('div')
+                    chatRoomListingElement.onclick = selectChatroom
+                    chatRoomListingElement.id = 'chatRoomListing' + room
+                    chatRoomListingElement.classList.add('chatroom-listing')
+                    chatRoomListingElement.classList.add('current-chatroom')
+                    chatRoomListingElement.innerText = room
+
+                    chatRoomList.appendChild(chatRoomListingElement)
+            }
+
+            function refreshChatLog () {
+                setInterval(function() {
+                    getChatLog('General')
+                }, 5000)
+            }
+
+            function loadBackgroundImage(imageName) {
+                var domain = document.domain
+                var backgroundUrl = 'http://' + domain + ':8090/Images/' + imageName
+                var body = document.getElementsByTagName('body')[0]
+                    body.style.background = 'url("' + backgroundUrl + '")'
+            }
+
+            window.onload = function ( ) {
+                var newUserBtn = document.getElementById('newUserBtn')
+                var currentUserBtn = document.getElementById('userLoginBtn')
+                var createUserBtn = document.getElementById('createUserBtn')
+                var loginBtn = document.getElementById('loginBtn')
+                var chatinput = document.getElementById('chatinput')
+                var loggedin = document.getElementsByTagName('loggedin')[0]
+                var loggedInAs = document.getElementsByTagName('loggedinas')[0]
+                var loggedinoptions = document.getElementsByTagName('loggedinoptions')[0]
+
+                loadBackgroundImage('chatbg-beach.jpg')
+
+                if (localStorage['LoggedIn'] &&
+                    localStorage['LoggedIn'] != undefined  && 
+                    localStorage['LoggedIn'] != 'undefined' && 
+                    localStorage['LoggedIn'] != ''
+                    ) {
+                    loggedInAs.innerHTML = JSON.parse(localStorage['LoggedIn']).LocalStorageLoggedIn
+                }
+
+                chatinput.onkeydown = function(e) {
+                    if (e.key === 'Enter') {
+                        var message = this.value
+                        postMessage(message)
+                        return
+                    }
+                }
+
+                newUserBtn.onclick = function (e) {
+                    document.getElementById('newUserEntryForm').classList.remove('hidden')
+                    document.getElementById('newUserEntryForm').style.zIndex = '5'
+                    document.getElementById('userLoginForm').classList.add('hidden')
+                    document.getElementById('userLoginForm').style.zIndex = '0'
+
+                }
+
+                currentUserBtn.onclick = function (e) {
+                    document.getElementById('userLoginForm').classList.remove('hidden')
+                    document.getElementById('newUserEntryForm').classList.add('hidden')
+                    document.getElementById('newUserEntryForm').style.zIndex = '0'
+                    document.getElementById('userLoginForm').style.zIndex = '5'
+                }
+
+                createUserBtn.onclick = function (e) {
+                    var username = document.getElementById('newUserName').value
+                    var password = document.getElementById('newPassword').value
+                    addNewUser (username, password)
+                }
+
+                loginBtn.onclick = function (e) {
+                    var username = document.getElementById('userName').value
+                    var password = document.getElementById('password').value
+                    authenticateUser({user: username, pass: password})
+                }
+            }
+
+            function processchatinput (chatinputstring) {
+                var chatoutput = document.getElementsByTagName('chatoutput')[0]
+                    chatoutput.innerHTML = chatoutput.innerHTML + '<br>' + chatinputstring
+            }
+        
+            var chatinput = document.getElementById('chatinput')
+                chatinput.onkeyup = function(e) {
+                    if (e.key === 'Enter') {
+                        var chatinputstring = this.value
+                        processchatinput(chatinputstring)
+                        this.value = ''
+                        this.focus()
+                    }
+                }
+        </script>
+    </body>
+</html>

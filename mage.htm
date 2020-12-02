@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Mage</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+            h4 {
+                display: inline-block;
+            }
+            .indicator {
+                display: inline-block;
+                width: 20px;
+                height: 19px;
+                position: relative;
+                top: 5px;
+                left: 7px;
+                box-sizing: border-box;
+                margin-right: 16px;
+            }
+            .indicator-running {
+                background: #1ee81d;
+                border: 1px solid #2f775d;
+            }
+            .indicator-stopped {
+                background: #efefef;
+                border: 1px solid #cdcdcd;
+            }
+            .port-status {
+                border: 1px solid;
+                padding: 0px 20px;
+                box-sizing: border-box;
+                margin: 5px 0;
+            }
+            .statusIndicators {
+                display: inline-block;
+            }
+            .portActionButtons {
+                display: inline-block;
+                border-radius: 3px;
+                margin: 10px 0;
+            }
+            .unavailable {
+                color: grey;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="port-status" port="8081">
+            <h4>Account UI::8081</h4>
+            <div class="statusIndicators">
+                Status: <span id="status8081">Stopped</span>
+                <span id="indicator8081" class="indicator indicator-stopped"></span>
+            </div>
+            <div class="portActionButtons">
+                <button id="start8081" run="start" port="8081" class="port-action-button available">Start</button>
+                <button id="stop8081" run="stop" port="8081" class="port-action-button unavailable">Stop</button>
+                <button id="restart8081" run="restart" port="8081" class="port-action-button unavailable">Restart</button>
+            </div>
+        </div>
+        <div class="port-status" port="8082">
+            <h4>Credit View::8082</h4>
+            <div class="statusIndicators">
+                Status: <span id="status8082">Running</span>
+                <span id="indicator8082" class="indicator indicator-running"></span>
+            </div>
+            <div class="portActionButtons">
+                <button id="start8082" run="start" port="8082" class="port-action-button unavailable">Start</button>
+                <button id="stop8082" run="stop" port="8082" class="port-action-button available">Stop</button>
+                <button id="restart8082" run="restart" port="8082" class="port-action-button available">Restart</button>
+            </div>
+        </div>
+        <div class="port-status" port="8084">
+            <h4>Scaled Text Entry::8084</h4>
+            <div class="statusIndicators">
+                Status: <span id="status8084">Running</span>
+                <span id="indicator8084" class="indicator indicator-running"></span>
+            </div>
+            <div class="portActionButtons">
+                <button id="start8084" run="start" port="8084" class="port-action-button unavailable">Start</button>
+                <button id="stop8084" run="stop" port="8084" class="port-action-button available">Stop</button>
+                <button id="restart8084" run="restart" port="8084" class="port-action-button available">Restart</button>
+            </div>
+        </div>
+        <div class="port-status" port="8087">
+            <h4>API::8087</h4>
+            <div class="statusIndicators">
+                Status: <span id="status8087">Running</span>
+                <span id="indicator8087" class="indicator indicator-running"></span>
+            </div>
+            <div class="portActionButtons">
+                <button id="start8087" run="start" port="8087" class="port-action-button unavailable">Start</button>
+                <button id="stop8087" run="stop" port="8087" class="port-action-button available">Stop</button>
+                <button id="restart8087" run="restart" port="8087" class="port-action-button available">Restart</button>
+            </div>
+        </div>
+
+        <script>
+            var currentPort = 0
+            function getCurrentPort() {
+                return currentPort
+            }
+            function setCurrentPort(port) {
+                currentPort = port
+                return currentPort
+            }
+
+            function getPortStatus (port) {
+                var cp = setCurrentPort(port)
+                var statusArea = document.getElementById('status' + port)
+                httpRequest = new XMLHttpRequest()
+                httpRequest.onreadystatechange = sendPortRequest
+                var url = 'http://localhost:' + port
+                httpRequest.open('GET', url)
+                httpRequest.send()
+            }
+
+            function sendPortRequest () {
+                if (httpRequest.readyState === XMLHttpRequest.DONE) {
+                    if (httpRequest.status === 200) {
+                        var response = httpRequest.responseText
+                        var statusText = httpRequest.statusText
+                        var responseURL = httpRequest.responseURL.replace('http://localhost:', '')
+                        var port = responseURL.replace('/', '')
+                        var statusId = 'status' + port
+                        var statusSpan = document.getElementById(statusId)
+                            statusSpan.innerHTML = 'Running'
+                        var indicatorId = 'indicator' + port
+                        var indicatorSpan = document.getElementById(indicatorId)
+                            indicatorSpan.classList.remove('indicator-stopped')
+                            indicatorSpan.classList.add('indicator-running')
+                        var startId = 'start' + port
+                        var startSpan = document.getElementById(startId)
+                            startSpan.classList.remove('available')
+                            startSpan.classList.add('unavailable')
+                        var stopId = 'stop' + port
+                        var stopSpan = document.getElementById(stopId)
+                            stopSpan.classList.remove('unavailable')
+                            stopSpan.classList.add('available')
+                        var restartId = 'restart' + port
+                        var restartSpan = document.getElementById(restartId)
+                            restartSpan.classList.remove('unavailable')
+                            restartSpan.classList.add('available')
+
+                    } else {
+                        var port = getCurrentPort()
+                        var statusId = 'status' + port
+                        var statusSpan = document.getElementById(statusId)
+                            statusSpan.innerHTML = 'Stopped'
+                        var indicatorId = 'indicator' + port
+                        var indicatorSpan = document.getElementById(indicatorId)
+                            indicatorSpan.classList.remove('indicator-running')
+                            indicatorSpan.classList.add('indicator-stopped')
+                        var startId = 'start' + port
+                        var startSpan = document.getElementById(startId)
+                            startSpan.classList.remove('unavailable')
+                            startSpan.classList.add('available')
+                        var stopId = 'stop' + port
+                        var stopSpan = document.getElementById(stopId)
+                            stopSpan.classList.remove('unavailable')
+                            stopSpan.classList.add('available')
+                        var restartId = 'restart' + port
+                        var restartSpan = document.getElementById(restartId)
+                            restartSpan.classList.remove('available')
+                            restartSpan.classList.add('unavailable')
+                    }
+                }
+            }
+
+            var portActionButtons = document.getElementsByClassName('port-action-button')
+
+            for (var i = 0; i < portActionButtons.length; i++) {
+                portActionButtons[i].onclick = function (e) {
+                    var port = e.target.getAttribute('port')
+                    var currentPort = setCurrentPort(port)
+                    var runAction = e.target.getAttribute('run')
+                    console.log('port: ' + port)
+                    console.log('runAction: ' + runAction)
+
+                    getPortStatus(port)
+                }
+            }
+
+            getPortStatus(8081)
+            
+        </script>
+    </body>
+</html>
